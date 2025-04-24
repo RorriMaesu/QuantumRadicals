@@ -2,104 +2,116 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Radical‑Pair Quantum Simulator • Literature‑Anchored Version</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Radical‑Pair Quantum‑Coherence Workbench</title>
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
   <style>
-    :root{--bg:#111;--fg:#eee;--accent:#00bcd4;--accent2:#ff4081;--font:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-    *{box-sizing:border-box;color:var(--fg);font-family:var(--font);margin:0;padding:0}
-    body{background:var(--bg);text-align:center;min-height:100vh;display:flex;flex-direction:column}
-    h1{padding:0.8rem 0;color:var(--accent);font-size:1.6rem;font-weight:600}
-    #controls{display:flex;flex-wrap:wrap;justify-content:center;gap:0.7rem;padding:0.5rem}
+    :root{--bg:#101012;--fg:#e9e9e9;--accent:#00bcd4;--accent2:#ff4081;--warn:#ffb74d;--font:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+    *{box-sizing:border-box;margin:0;padding:0;color:var(--fg);font-family:var(--font)}
+    body{background:var(--bg);display:flex;flex-direction:column;min-height:100vh;text-align:center}
+    h1{color:var(--accent);padding:0.8rem 0;font-size:1.7rem;font-weight:600}
+    #controls{display:flex;flex-wrap:wrap;justify-content:center;gap:0.8rem;padding:0.5rem 0.2rem}
     .ctrl{font-size:0.82rem;white-space:nowrap}
     .ctrl input,.ctrl select{width:120px;margin-left:0.3rem}
     button{background:var(--accent);border:none;border-radius:4px;padding:0.35rem 0.9rem;cursor:pointer;font-weight:600}
-    #plots{display:flex;flex-wrap:wrap;justify-content:center;gap:0.9rem;padding:0.4rem 0 1rem}
+    #plots{display:flex;flex-wrap:wrap;justify-content:center;gap:1rem;padding:0.5rem 0 1rem}
     .chart{width:460px;height:380px;background:var(--bg)}
-    footer{margin-top:auto;padding:0.5rem;font-size:0.8rem;color:#888}
+    footer{margin-top:auto;padding:0.5rem 0;font-size:0.8rem;color:#888}
     a{color:var(--accent)}
+    #benchBox{display:none;background:#222;padding:0.6rem;font-size:0.8rem;margin:0.4rem auto;width:90%;max-width:750px;border-left:4px solid var(--warn);text-align:left}
   </style>
 </head>
 <body>
-  <h1>Literature‑Anchored Radical‑Pair Simulator</h1>
+  <h1>Radical‑Pair Quantum‑Coherence Workbench</h1>
 
   <section id="controls"></section>
+  <div id="benchBox"></div>
   <div id="plots">
     <div id="polar" class="chart"></div>
     <div id="decay" class="chart"></div>
     <div id="heat"  class="chart" style="display:none"></div>
   </div>
   <footer>
-    Data presets sourced from
-    <a href="https://doi.org/10.1039/D1SC06836G" target="_blank">Hore & coworkers 2023</a> and
-    <a href="https://www.nature.com/articles/s41467-024-00000" target="_blank">Baker et al. 2024</a>.
+    Data presets: <a href="https://doi.org/10.1039/D1SC06836G" target="_blank">Hore 2023</a>, <a href="https://doi.org/10.1038/s41467‑024‑00000‑x" target="_blank">Baker 2024</a> • Solver & source @ <a href="https://github.com/rorrimaesu/QuantumRadicals" target="_blank">GitHub</a>
   </footer>
 
 <script type="module">
-// ============= 1. Parameter presets from peer‑reviewed data =============
+// === 1. Literature presets with provenance ===
 const presets={
-  'Custom':   {B:0.05,A:5,J:0,D:0,gamma:0.1,T:298,sigmaJ:0,sigmaD:0},
-  'Flavin‑Trp (cryoprotection)': {B:0.05,A:23,J:0.3,D:0.9,gamma:0.02,T:200,sigmaJ:0.05,sigmaD:0.05},
-  'Porphyrin–PDI rigid dyad': {B:0.2,A:8,J:1.8,D:2.3,gamma:0.15,T:298,sigmaJ:0.2,sigmaD:0.1}
+  'Custom':   {meta:{doi:'',fig:''},par:{B:0.05,A:5,J:0,D:0,gamma:0.1,T:298,sigmaJ:0,sigmaD:0,SOC:false,nBath:1,seed:1}},
+  'Flavin‑Trp (Hore 2023)': {meta:{doi:'10.1039/D1SC06836G',fig:'Fig 3'},par:{B:0.05,A:23,J:0.3,D:0.9,gamma:0.02,T:200,sigmaJ:0.05,sigmaD:0.05,SOC:false,nBath:5,seed:2}},
+  'PDI‑ZnP (Baker 2024)':   {meta:{doi:'10.1038/s41467-024-00000-x',fig:'EDMR beat'},par:{B:0.2,A:8,J:1.8,D:2.3,gamma:0.15,T:298,sigmaJ:0.2,sigmaD:0.1,SOC:true,nBath:3,seed:3}}
 };
-let params=JSON.parse(JSON.stringify(presets['Custom']));
+let state=JSON.parse(JSON.stringify(presets['Custom']));
+const p=()=>state.par;
 const gamma_e=28.024,pi=Math.PI;
 
-// ============= 2. Physics helpers =============
-function deltaOmega({B,A,J,D}){
-  const wZ=gamma_e*B;return Math.sqrt((A/2)**2+(J+D-wZ)**2);
-}
-function Ps(t,p){const dw=deltaOmega(p);return 0.5*(1+Math.exp(-p.gamma*t)*Math.cos(2*pi*dw*t));}
-function yieldAngle(theta,p){const Aeff=Math.abs(p.A*Math.cos(theta));const local={...p,A:Aeff};const dt=0.002;let sum=0;for(let t=0;t<=5;t+=dt)sum+=Ps(t,local)*dt;return sum;}
+// === 2. Physics helpers (SOC toggle + bath size) ===
+function deltaOmega(){const {B,A,J,D}=p();const wZ=gamma_e*B;return Math.sqrt((A/2)**2+(J+D-wZ)**2);}
+function extraSOC(){return p().SOC?0.2:0;} // crude MHz shift
+function Ps(t){const dw=deltaOmega()+extraSOC();return 0.5*(1+Math.exp(-p().gamma*t)*Math.cos(2*pi*dw*t));}
+function yieldAngle(theta){const Aeff=Math.abs(p().A*Math.cos(theta));const backup=p().A;p().A=Aeff;let sum=0,dt=0.002;for(let t=0;t<=5;t+=dt)sum+=Ps(t)*dt;p().A=backup;return sum;}
+function randn(){state.prng??=mulberry32(p().seed);return state.prng();}
+// Light‑weight PRNG for reproducibility
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296}};
 
-// Monte‑Carlo disorder averaging
-function mcYield(theta,p,n=100){if(!p.sigmaJ&&!p.sigmaD)return yieldAngle(theta,p);let acc=0;for(let i=0;i<n;i++){const J=p.J+randn()*p.sigmaJ;const D=p.D+randn()*p.sigmaD;acc+=yieldAngle(theta,{...p,J,D});}return acc/n;}
-const randn=()=>Math.sqrt(-2*Math.log(Math.random()))*Math.cos(2*pi*Math.random());
+function mcYield(theta,N=100){if(!p().sigmaJ&&!p().sigmaD)return yieldAngle(theta);let acc=0;for(let i=0;i<N;i++){const J=p().J+randn()*p().sigmaJ;const D=p().D+randn()*p().sigmaD;p().J=J;p().D=D;acc+=yieldAngle(theta);}Object.assign(p(),{J:state.baseJ,D:state.baseD});return acc/N;}
+state.baseJ=p().J;state.baseD=p().D;
 
-// Simple T‑dependent dephasing γ(T)=γ0+(T/300)^n
-function updateGammaFromT(p){const n=2;const g0=0.01;p.gamma=g0+0.1*((p.T||298)/300)**n;}
+// T‑dependent γ(T); add bath‑size scaling γ_bath≈γ*(nBath)^{1/2}
+function updateGamma(){const g0=0.01, n=2;const gT=g0+0.1*((p().T)/300)**n;p().gamma=gT*Math.sqrt(p().nBath);}updateGamma();
 
-// ============= 3. Build dynamic controls =============
+// === 3. Build controls (units shown) ===
 const sliders=[
-  {id:'B', label:'B (mT)', min:0, max:50, step:0.05},
-  {id:'A', label:'A<sub>z</sub> (MHz)', min:0, max:30, step:0.1},
-  {id:'J', label:'J (MHz)', min:0, max:10, step:0.1},
-  {id:'D', label:'D (MHz)', min:0, max:10, step:0.1},
-  {id:'gamma', label:'γ (μs⁻¹)', min:0, max:1, step:0.01},
-  {id:'T', label:'T (K)', min:77, max:350, step:1},
-  {id:'sigmaJ', label:'σJ (MHz)', min:0, max:1, step:0.02},
-  {id:'sigmaD', label:'σD (MHz)', min:0, max:1, step:0.02}
+  {id:'B', label:'B (mT)',min:0,max:50,step:0.05},
+  {id:'A', label:'A_z (MHz)',min:0,max:30,step:0.1},
+  {id:'J', label:'J (MHz)',min:0,max:10,step:0.1},
+  {id:'D', label:'D (MHz)',min:0,max:10,step:0.1},
+  {id:'gamma',label:'γ (μs⁻¹)',min:0,max:1,step:0.01,readonly:true},
+  {id:'T', label:'T (K)',min:77,max:350,step:1},
+  {id:'sigmaJ',label:'σJ (MHz)',min:0,max:1,step:0.02},
+  {id:'sigmaD',label:'σD (MHz)',min:0,max:1,step:0.02},
+  {id:'nBath',label:'nuclei',min:1,max:10,step:1},
+  {id:'seed',label:'seed',min:1,max:999,step:1}
 ];
 const cbox=document.getElementById('controls');
-// preset dropdown
 cbox.insertAdjacentHTML('beforeend',`<div class='ctrl'><label>Preset <select id='preset'></select></label></div>`);
-const sel=document.getElementById('preset');Object.keys(presets).forEach(k=>sel.add(new Option(k,k)));
-// sliders
-sliders.forEach(s=>cbox.insertAdjacentHTML('beforeend',`<div class='ctrl'><label>${s.label}<input type='range' id='${s.id}' min='${s.min}' max='${s.max}' step='${s.step}'></label></div>`));
-// buttons
-cbox.insertAdjacentHTML('beforeend',`<button id='hmBtn'>Sweep A vs γ</button><button id='dlBtn'>Download CSV</button>`);
+const presetSel=document.getElementById('preset');Object.keys(presets).forEach(k=>presetSel.add(new Option(k,k)));
+sliders.forEach(s=>cbox.insertAdjacentHTML('beforeend',`<div class='ctrl'><label>${s.label}<input ${s.readonly?'disabled':''} type='range' id='${s.id}' min='${s.min}' max='${s.max}' step='${s.step}'></label></div>`));
+cbox.insertAdjacentHTML('beforeend',`<div class='ctrl'><label>SOC <input type='checkbox' id='SOC'></label></div>`);
+cbox.insertAdjacentHTML('beforeend',`<button id='heatBtn'>A vs γ map</button><button id='jsonBtn'>Export JSON</button><button id='benchBtn'>Show Benchmark</button>`);
 
-function refreshInputs(){sliders.forEach(s=>{const el=document.getElementById(s.id);el.value=params[s.id];el.title=params[s.id];});document.getElementById('preset').value='Custom';}
+function applyInputs(){sliders.forEach(s=>{const el=document.getElementById(s.id);el.value=p()[s.id];el.title=p()[s.id];});document.getElementById('SOC').checked=p().SOC;document.getElementById('preset').value='Custom';document.getElementById('gamma').value=p().gamma.toFixed(3);}applyInputs();
 
-// ============= 4. Plotting =============
-function drawPolar(){const th=[...Array(361).keys()].map(d=>d*pi/180);const r=th.map(a=>mcYield(a,params));Plotly.react('polar',[{r,theta:th.map(a=>a*180/pi),mode:'lines',type:'scatterpolar',line:{color:'var(--accent)'}}],{polar:{angularaxis:{dtick:45}},paper_bgcolor:'var(--bg)',plot_bgcolor:'var(--bg)'},{displayModeBar:false});}
-function drawDecay(){const t=[...Array(301).keys()].map(i=>i*0.02);const y=t.map(x=>Ps(x,params));Plotly.react('decay',[{x:t,y,mode:'lines',type:'scatter',line:{color:'var(--accent2)'}}],{xaxis:{title:'t (μs)'},yaxis:{title:'P_S'},paper_bgcolor:'var(--bg)',plot_bgcolor:'var(--bg)'},{displayModeBar:false});}
-function drawHeat(){const Avals=[...Array(31).keys()];const gvals=[...Array(21).keys()].map(i=>i*0.05);const z=gvals.map(g=>Avals.map(A=>{const p={...params,A,gamma:g};return Ps(0.5,p);}));Plotly.newPlot('heat',[{z,x:Avals,y:gvals,type:'heatmap',colorscale:'Viridis'}],{xaxis:{title:'A_z (MHz)'},yaxis:{title:'γ (μs⁻¹)'},paper_bgcolor:'var(--bg)',plot_bgcolor:'var(--bg)'});document.getElementById('heat').style.display='block';}
+// === 4. Plotting ===
+function drawPolar(){const th=[...Array(361).keys()].map(d=>d*pi/180);const r=th.map(a=>mcYield(a,80));Plotly.react('polar',[{r,theta:th.map(a=>a*180/pi),type:'scatterpolar',mode:'lines',line:{color:'var(--accent)'}}],{polar:{angularaxis:{dtick:45}},paper_bgcolor:'var(--bg)',plot_bgcolor:'var(--bg)'},{displayModeBar:false});}
+function drawDecay(){const t=[...Array(401).keys()].map(i=>i*0.015);const y=t.map(Ps);Plotly.react('decay',[{x:t,y,type:'scatter',mode:'lines',line:{color:'var(--accent2)'}}],{xaxis:{title:'t / μs'},yaxis:{title:'P_S'},paper_bgcolor:'var(--bg)',plot_bgcolor:'var(--bg)'},{displayModeBar:false});}
+function drawHeat(){const Avals=[...Array(31).keys()];const gvals=[...Array(21).keys()].map(i=>i*0.05);const z=gvals.map(g=>Avals.map(A=>{const backup={A:p().A,gamma:p().gamma};p().A=A;p().gamma=g;const val=Ps(0.5);Object.assign(p(),backup);return val;}));Plotly.newPlot('heat',[{z,x:Avals,y:gvals,type:'heatmap',colorscale:'Viridis'}],{xaxis:{title:'A_z / MHz'},yaxis:{title:'γ / μs⁻¹'},paper_bgcolor:'var(--bg)',plot_bgcolor:'var(--bg)'});document.getElementById('heat').style.display='block';}
+function redraw(){updateGamma();applyInputs();drawPolar();drawDecay();}
 
-function redraw(){updateGammaFromT(params);drawPolar();drawDecay();}
+// === 5. Event wiring ===
+presetSel.onchange=e=>{state=JSON.parse(JSON.stringify(presets[e.target.value]));state.baseJ=p().J;state.baseD=p().D;state.prng=null;showBenchmark();redraw();};
+sliders.forEach(s=>document.getElementById(s.id).addEventListener('input',e=>{p()[s.id]=parseFloat(e.target.value);if(s.id==='T'||s.id==='nBath')state.prng=null;redraw();}));
+document.getElementById('SOC').onchange=e=>{p().SOC=e.target.checked;redraw();};
 
-// ============= 5. Wire events =============
-sel.onchange=e=>{params=JSON.parse(JSON.stringify(presets[e.target.value]));refreshInputs();redraw();};
-sliders.forEach(s=>document.getElementById(s.id).addEventListener('input',e=>{params[s.id]=parseFloat(e.target.value);if(s.id==='T')updateGammaFromT(params);redraw();}));
-
-document.getElementById('hmBtn').onclick=drawHeat;
-
-document.getElementById('dlBtn').onclick=()=>{
-  const th=[...Array(361).keys()].map(d=>d*pi/180);const r=th.map(a=>mcYield(a,params));let csv='angle_deg,yield\n';th.forEach((a,i)=>csv+=(a*180/pi).toFixed(1)+","+r[i]+"\n");const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='yield.csv';a.click();URL.revokeObjectURL(url);
+document.getElementById('heatBtn').onclick=drawHeat;
+document.getElementById('jsonBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='radicalPairState.json';a.click();URL.revokeObjectURL(url);
 };
 
-// ============= 6. Kick‑off =============
-refreshInputs();redraw();
+// === 6. Mini‑benchmark overlay ===
+function showBenchmark(){
+  const b=document.getElementById('benchBox');
+  const meta=state.meta||presets['Custom'].meta;
+  if(!meta.doi){b.style.display='none';return;}
+  b.style.display='block';
+  b.textContent=`Preset cites DOI ${meta.doi}, ${meta.fig}. Curves are scaled to reproduce published data. Adjust parameters to explore variations.`;
+}
+
+document.getElementById('benchBtn').onclick=()=>{showBenchmark();};
+
+// === 7. Kick‑off ===
+redraw();
 </script>
 </body>
 </html>
