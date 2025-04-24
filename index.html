@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Room-Temp Quantum Coherence • Radical Pair Simulator</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biomimetic Radical‑Pair Quantum Simulator</title>
   <link rel="stylesheet" href="style.css" />
   <!-- Plotly for slick interactive graphs -->
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 </head>
 <body>
-  <h1>Biomimetic Radical Pair Simulator</h1>
+  <h1>Biomimetic Radical‑Pair Quantum Simulator</h1>
 
   <section id="controls">
     <div class="slider"><label>B&nbsp;(mT) <input type="range" id="B" min="0" max="50" value="0.05" step="0.05"></label></div>
@@ -23,24 +23,31 @@
   <div id="plots">
     <div id="polar" class="chart"></div>
     <div id="decay" class="chart"></div>
-    <div id="map"   class="chart" style="display:none;"></div>
+    <div id="map" class="chart" style="display:none;"></div>
   </div>
 
-  <footer>Open source @ <a href="https://github.com/rorrimaesu/QuantumRadicals">rorrimaesu/QuantumRadicals</a></footer>
+  <footer>
+    Fork me on <a href="https://github.com/rorrimaesu/QuantumRadicals" target="_blank">GitHub</a>
+  </footer>
 
   <script type="module">
     import {updatePolar, updateDecay, sweepMap} from './plot.js';
     import {params} from './sim.js';
 
     // Wire sliders
-    document.querySelectorAll('input[type=range]').forEach(sl=>{
-      sl.addEventListener('input', ()=>{ params[sl.id]=parseFloat(sl.value); updatePolar(); updateDecay(); });
+    document.querySelectorAll('input[type=range]').forEach(sl => {
+      sl.addEventListener('input', () => {
+        params[sl.id] = parseFloat(sl.value);
+        updatePolar();
+        updateDecay();
+      });
     });
 
-    document.getElementById('heatmap').onclick = ()=>{ sweepMap(); };
+    document.getElementById('heatmap').onclick = () => { sweepMap(); };
 
     // first draw
-    updatePolar(); updateDecay();
+    updatePolar();
+    updateDecay();
   </script>
 </body>
 </html>

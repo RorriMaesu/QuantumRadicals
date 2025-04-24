@@ -1,18 +1,30 @@
-# QuantumRadicals – Interactive Radical-Pair Simulator
+# QuantumRadicals – Interactive Radical-Pair Quantum Simulator
 
-A 100 % static single-page app that visualizes room-temperature spin
-coherence in biomimetic radical pairs.
+A 100% static single-page app that visualizes room-temperature quantum spin
+coherence in biomimetic radical pairs with real-time interactive visualizations.
 
 **Live demo:** <https://rorrimaesu.github.io/QuantumRadicals/>
 
 ## Features
-* Drag sliders for B, hyperfine A, exchange J, dipolar D, decoherence γ
-* Instant polar plot of singlet yield vs angle
-* Animated coherence-decay graph
-* Heat-map sweep of T₂ across (A,γ)
+* Interactive sliders for all key parameters:
+  * Magnetic field strength (B) in mT
+  * Hyperfine coupling (A) in MHz
+  * Exchange interaction (J) in MHz
+  * Dipolar coupling (D) in MHz
+  * Decoherence rate (γ) in μs⁻¹
+* Real-time polar plot of singlet yield vs orientation angle
+* Animated coherence-decay graph showing quantum oscillations
+* Heat-map visualization of coherence time (T₂) across parameter space
+* Clean, responsive dark theme that works on mobile and desktop
 * Vanilla JS + Plotly, no build step, deploys via GitHub Pages
 
-Physics: minimal two-level analytic model.
+## Physics
+The simulation implements a minimal but physically accurate two-level analytic model of radical pair dynamics, including:
+* Zeeman interaction with external magnetic field
+* Hyperfine coupling with nuclear spins
+* Exchange and dipolar interactions between electron spins
+* Quantum decoherence effects
+* Orientation dependence of hyperfine coupling
 
 ---
 
@@ -41,12 +53,12 @@ No bundlers, no npm—*super light*.
 
 ---
 
-> **Next-level ideas**  
-> • Swap analytic solver for a small WASM-compiled Lindblad integrator (Pyodide)  
-> • Add "movie mode" that records GIFs of the oscillations  
-> • Embed in your LaTeX article via `\href` QR-code to let reviewers play 😎  
+> **Next-level ideas**
+> • Swap analytic solver for a small WASM-compiled Lindblad integrator (Pyodide)
+> • Add "movie mode" that records GIFs of the oscillations
+> • Embed in your LaTeX article via `\href` QR-code to let reviewers play 😎
 
 ---
 
-Happy quantum hacking!  
+Happy quantum hacking!
 *— Andrew (rorrimaesu)*
