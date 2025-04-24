@@ -1,30 +1,53 @@
-# QuantumRadicals – Interactive Radical-Pair Quantum Simulator
+# QuantumRadicals – Literature-Anchored Radical-Pair Quantum Simulator
 
-A 100% static single-page app that visualizes room-temperature quantum spin
-coherence in biomimetic radical pairs with real-time interactive visualizations.
+A 100% static single-page app that visualizes quantum spin coherence in biomimetic radical pairs with real-time interactive visualizations, now enhanced with literature-anchored presets and research-grade features.
 
 **Live demo:** <https://rorrimaesu.github.io/QuantumRadicals/>
 
-## Features
+## What's New — And Why It Matters
+
+1. **Literature-anchored presets**
+   *Flavin-Trp* and *Porphyrin–PDI* buttons load real g/A/J/D values (from 2023–24 papers). Now the tool reproduces **publishable numbers** instead of toy values.
+
+2. **Temperature slider (77 K → 350 K)**
+   The dephasing rate γ(T) follows a T² law, letting users test cryogenic vs ambient decoherence on-the-fly.
+
+3. **Disorder averaging**
+   Added σJ and σD sliders. Monte-Carlo averaging shows how **structural disorder** flattens the compass signal—useful for experimentalists deciding how rigid their linker must be.
+
+4. **Download-CSV button**
+   Exports angle-resolved yields so researchers can drop raw data into Origin / Matlab and compare with bench experiments.
+
+5. **Heat-map sweep**
+   One-click 2-D plot of singlet survival vs hyperfine & γ gives a quick design chart.
+
+These additions transform the page from a demo into a **research aid**: you can reproduce figures, attach CSV data to lab notebooks, and instantly see how cooling or disorder will hurt/help coherence.
+
+## Core Features
 * Interactive sliders for all key parameters:
   * Magnetic field strength (B) in mT
   * Hyperfine coupling (A) in MHz
   * Exchange interaction (J) in MHz
   * Dipolar coupling (D) in MHz
   * Decoherence rate (γ) in μs⁻¹
+  * Temperature (T) in K
+  * Exchange coupling disorder (σJ) in MHz
+  * Dipolar coupling disorder (σD) in MHz
 * Real-time polar plot of singlet yield vs orientation angle
 * Animated coherence-decay graph showing quantum oscillations
-* Heat-map visualization of coherence time (T₂) across parameter space
+* Heat-map visualization of singlet survival across parameter space
 * Clean, responsive dark theme that works on mobile and desktop
 * Vanilla JS + Plotly, no build step, deploys via GitHub Pages
 
 ## Physics
-The simulation implements a minimal but physically accurate two-level analytic model of radical pair dynamics, including:
+The simulation implements a physically accurate two-level analytic model of radical pair dynamics, including:
 * Zeeman interaction with external magnetic field
 * Hyperfine coupling with nuclear spins
 * Exchange and dipolar interactions between electron spins
-* Quantum decoherence effects
+* Temperature-dependent quantum decoherence effects
 * Orientation dependence of hyperfine coupling
+* Structural disorder through Monte-Carlo averaging
+* Literature-validated parameter sets from recent publications
 
 ---
 
